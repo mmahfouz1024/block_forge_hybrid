@@ -29,6 +29,7 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   late BoardEngine _engine;
   final GlobalKey _boardKey = GlobalKey();
+  final GlobalKey _stackKey = GlobalKey();
 
   int? _draggingTrayIndex;
   int? _selectedTrayIndex;
@@ -75,7 +76,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     _bannerText = null;
   }
 
-  double get _dragLiftY => _dragDeviceKind == PointerDeviceKind.mouse ? 0.0 : -56.0;
+  double get _dragLiftY => _dragDeviceKind == PointerDeviceKind.mouse ? 0.0 : -64.0;
 
   void _updateHoverFromGlobal(Offset globalPos) {
     if (_draggingTrayIndex == null) return;
@@ -95,8 +96,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     final topLeftGlobal = liftedGlobal - Offset(shapeWidth / 2, shapeHeight / 2);
     final localTopLeft = box.globalToLocal(topLeftGlobal);
 
-    final col = ((localTopLeft.dx + cellSize * 0.5) / cellSize).floor();
-    final row = ((localTopLeft.dy + cellSize * 0.5) / cellSize).floor();
+    final col = (localTopLeft.dx / cellSize).round();
+    final row = (localTopLeft.dy / cellSize).round();
 
     if (row >= 0 &&
         col >= 0 &&
@@ -378,6 +379,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         backgroundColor: const Color(0xFF0B1120),
         body: SafeArea(
           child: Stack(
+            key: _stackKey,
             children: [
               Column(
                 children: [
@@ -555,7 +557,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   Widget _buildBoardGrid(BlockShape? draggingShape, PreviewClear previewClear) {
     return Container(
-      key: _boardKey,
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: const Color(0xFF131C35),
@@ -569,13 +570,16 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final cellSize = constraints.maxWidth / BoardEngine.gridSize;
-          _boardCellSize = cellSize;
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final cellSize = constraints.maxWidth / BoardEngine.gridSize;
+            _boardCellSize = cellSize;
 
-          return Column(
-            children: List.generate(BoardEngine.gridSize, (r) {
+            return Column(
+              key: _boardKey,
+              children: List.generate(BoardEngine.gridSize, (r) {
               return Expanded(
                 child: Row(
                   children: List.generate(BoardEngine.gridSize, (c) {
@@ -641,12 +645,15 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           );
         },
       ),
+    ),
     );
   }
 
   Widget _buildTrayRow() {
-    return SizedBox(
-      height: 98,
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: SizedBox(
+        height: 98,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Row(
@@ -747,22 +754,27 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           }),
         ),
       ),
+    ),
     );
   }
 
   Widget _buildFloatingDragPiece(BlockShape shape) {
     final cell = _boardCellSize > 10 ? _boardCellSize - 3.6 : 36.0;
-    final w = shape.cols * (cell + 2.5);
-    final h = shape.rows * (cell + 2.5);
-    final pos = _dragGlobalPos! + Offset(0, _dragLiftY);
+    const gap = 3.6;
+    final w = shape.cols * cell + (shape.cols - 1) * gap;
+    final h = shape.rows * cell + (shape.rows - 1) * gap;
+    final liftedGlobal = _dragGlobalPos! + Offset(0, _dragLiftY);
+    final stackBox = _stackKey.currentContext?.findRenderObject() as RenderBox?;
+    final localPos = stackBox != null ? stackBox.globalToLocal(liftedGlobal) : liftedGlobal;
+
     return Positioned(
-      left: pos.dx - w / 2,
-      top: pos.dy - h / 2,
+      left: localPos.dx - w / 2,
+      top: localPos.dy - h / 2,
       child: IgnorePointer(
         child: ShapePreviewWidget(
           shape: shape,
           cellSize: cell,
-          spacing: 2.5,
+          spacing: gap,
           opacity: 0.92,
         ),
       ),

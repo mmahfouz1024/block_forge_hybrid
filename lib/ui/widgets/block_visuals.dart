@@ -124,27 +124,30 @@ class ShapePreviewWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: opacity,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(shape.rows, (r) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: r == shape.rows - 1 ? 0 : spacing),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(shape.cols, (c) {
-                final filled = shape.matrix[r][c] == 1;
-                return Padding(
-                  padding: EdgeInsets.only(right: c == shape.cols - 1 ? 0 : spacing),
-                  child: filled
-                      ? GlossBlockTile(color: shape.color, size: cellSize)
-                      : SizedBox(width: cellSize, height: cellSize),
-                );
-              }),
-            ),
-          );
-        }),
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Opacity(
+        opacity: opacity,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(shape.rows, (r) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: r == shape.rows - 1 ? 0 : spacing),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(shape.cols, (c) {
+                  final filled = shape.matrix[r][c] == 1;
+                  return Padding(
+                    padding: EdgeInsets.only(right: c == shape.cols - 1 ? 0 : spacing),
+                    child: filled
+                        ? GlossBlockTile(color: shape.color, size: cellSize)
+                        : SizedBox(width: cellSize, height: cellSize),
+                  );
+                }),
+              ),
+            );
+          }),
+        ),
       ),
     );
   }

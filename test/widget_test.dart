@@ -1,9 +1,12 @@
 import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:block_forge_hybrid/logic/board_engine.dart';
 import 'package:block_forge_hybrid/main.dart';
 import 'package:block_forge_hybrid/models/game_models.dart';
+import 'package:block_forge_hybrid/ui/screens/game_screen.dart';
+import 'package:block_forge_hybrid/ui/widgets/block_visuals.dart';
 
 void main() {
   group('BoardEngine', () {
@@ -107,5 +110,35 @@ void main() {
     await tester.pumpWidget(const BlockForgeApp());
     await tester.pumpAndSettle();
     expect(find.text('قلعة البلوكات'), findsOneWidget);
+  });
+
+  testWidgets('GameScreen drag-and-drop places block in Arabic RTL mode', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final profile = PlayerProfile(isArabic: true);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GameScreen(
+          profile: profile,
+          mode: GameMode.classic,
+          onSaveProfile: () async {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final firstTrayPiece = find.byType(ShapePreviewWidget).first;
+    final start = tester.getCenter(firstTrayPiece);
+    final boardBox = find.byType(AspectRatio).first;
+    final boardCenter = tester.getCenter(boardBox);
+
+    final gesture = await tester.startGesture(start);
+    await tester.pump(const Duration(milliseconds: 50));
+    await gesture.moveTo(boardCenter);
+    await tester.pump(const Duration(milliseconds: 50));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    // Score increases from 0 when a piece is placed on the board.
+    expect(find.text('0'), findsNothing);
   });
 }
